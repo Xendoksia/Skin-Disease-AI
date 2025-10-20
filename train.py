@@ -6,6 +6,7 @@ import numpy as np
 from pathlib import Path
 from sklearn.model_selection import train_test_split
 import os
+import matplotlib.pyplot as plt
 
 # 1. VERİ HAZIRLAMA
 def prepare_dataset(processed_data_dir, original_data_dir, img_size=224, validation_split=0.2):
