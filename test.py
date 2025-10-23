@@ -7,21 +7,28 @@ import tensorflow as tf
 from tensorflow import keras
 import os
 from pathlib import Path
+import torch
+import segmentation_models_pytorch as smp
+import albumentations as A
+from albumentations.pytorch import ToTensorV2
 
 class SkinDiseaseClassifierUI:
     def __init__(self, root):
         self.root = root
-        self.root.title("🔬 Skin Disease Classifier")
-        self.root.geometry("1600x900")
+        self.root.title("🔬 Skin Disease Classifier & Segmentation")
+        self.root.geometry("1800x900")
         self.root.configure(bg='#f0f0f0')
         
         self.model = None
+        self.seg_model = None
         self.class_names = None
         self.current_image = None
         self.current_image_path = None
+        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         
         self.setup_ui()
         self.load_model()
+        self.load_segmentation_model()
         
     def setup_ui(self):
         """Setup the user interface"""
@@ -31,7 +38,7 @@ class SkinDiseaseClassifierUI:
         
         title_label = tk.Label(
             title_frame, 
-            text="🔬 Skin Disease Classification with Grad-CAM",
+            text="🔬 Skin Disease Classification & Segmentation",
             font=('Arial', 24, 'bold'),
             bg='#2c3e50',
             fg='white'
@@ -68,6 +75,21 @@ class SkinDiseaseClassifierUI:
         self.explanation_label = tk.Label(middle_frame, bg='white', text="Grad-CAM heat map\n\nKırmızı bölgeler = Yüksek aktivasyon", 
                                      font=('Arial', 12), fg='gray')
         self.explanation_label.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+        
+        # Add segmentation frame
+        seg_frame = tk.LabelFrame(
+            main_frame,
+            text="🎯 Lesion Segmentation",
+            font=('Arial', 12, 'bold'),
+            bg='white',
+            relief=tk.RAISED,
+            borderwidth=2
+        )
+        seg_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(0, 10))
+        
+        self.segmentation_label = tk.Label(seg_frame, bg='white', text="U-Net Segmentation\n\nLezyon bölgesi maskelenir", 
+                                     font=('Arial', 12), fg='gray')
+        self.segmentation_label.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
         
         right_frame = tk.Frame(main_frame, bg='#f0f0f0')
         right_frame.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True)
@@ -249,6 +271,79 @@ class SkinDiseaseClassifierUI:
             import traceback
             traceback.print_exc()
             messagebox.showerror("Error", f"Failed to load model:\n{str(e)}")
+    
+    def load_segmentation_model(self):
+        """Load the segmentation model"""
+        try:
+            print("\n🔄 Loading segmentation model...")
+            
+            seg_model_path = 'segmentation_outputs/checkpoints/best_model.pth'
+            
+            if not os.path.exists(seg_model_path):
+                print("⚠️ Segmentation model not found, segmentation will be disabled")
+                print(f"   Looking for: {os.path.abspath(seg_model_path)}")
+                self.seg_model = None
+                return
+            
+            # Load config
+            config_path = 'segmentation_outputs/config.json'
+            if os.path.exists(config_path):
+                import json
+                with open(config_path, 'r') as f:
+                    config = json.load(f)
+                architecture = config.get('architecture', 'unet')
+                backbone = config.get('backbone', 'efficientnet-b0')
+            else:
+                architecture = 'unet'
+                backbone = 'efficientnet-b0'
+            
+            print(f"   Architecture: {architecture}")
+            print(f"   Backbone: {backbone}")
+            
+            # Create model
+            if architecture == 'unet':
+                self.seg_model = smp.Unet(
+                    encoder_name=backbone,
+                    encoder_weights=None,
+                    in_channels=3,
+                    classes=1,
+                    activation=None
+                )
+            elif architecture == 'unet++':
+                self.seg_model = smp.UnetPlusPlus(
+                    encoder_name=backbone,
+                    encoder_weights=None,
+                    in_channels=3,
+                    classes=1,
+                    activation=None
+                )
+            else:
+                self.seg_model = smp.Unet(
+                    encoder_name=backbone,
+                    encoder_weights=None,
+                    in_channels=3,
+                    classes=1,
+                    activation=None
+                )
+            
+            # Load weights
+            checkpoint = torch.load(seg_model_path, map_location=self.device)
+            self.seg_model.load_state_dict(checkpoint['model_state_dict'])
+            self.seg_model.to(self.device)
+            self.seg_model.eval()
+            
+            print(f"✅ Segmentation model loaded! (Epoch {checkpoint['epoch']+1})")
+            best_iou = checkpoint.get('best_iou', checkpoint.get('best_val_iou', 0))
+            print(f"   Best IoU: {best_iou:.4f}")
+            
+            messagebox.showinfo("Segmentation Model", 
+                f"Segmentation model loaded!\n\nArchitecture: {architecture}\nBackbone: {backbone}\nBest IoU: {best_iou:.4f}")
+            
+        except Exception as e:
+            print(f"⚠️ Could not load segmentation model: {e}")
+            import traceback
+            traceback.print_exc()
+            self.seg_model = None
     
     def compute_gradcam(self, img):
         """🔥 Grad-CAM ile hastalık bölgesini tespit et"""
@@ -505,6 +600,41 @@ class SkinDiseaseClassifierUI:
                     self.explanation_label.image = img_tk
                     print("✅ Grad-CAM visualization displayed!")
             
+            # 🎯 Segmentation
+            if self.seg_model is not None:
+                self.status_label.config(text="🎯 Running segmentation (lezyon maskeleniyor)...")
+                self.root.update()
+                
+                seg_mask = self.predict_segmentation(self.current_image)
+                
+                if seg_mask is not None:
+                    print("✅ Creating segmentation visualization...")
+                    
+                    # Display img'i resize et
+                    display_img = self.current_image.copy()
+                    h, w = display_img.shape[:2]
+                    max_size = 400
+                    if max(h, w) > max_size:
+                        scale = max_size / max(h, w)
+                        new_w, new_h = int(w * scale), int(h * scale)
+                        display_img = cv2.resize(display_img, (new_w, new_h))
+                        seg_mask = cv2.resize(seg_mask, (new_w, new_h))
+                    
+                    seg_img = self.create_segmentation_overlay(display_img, seg_mask)
+                    
+                    if seg_img is not None:
+                        img_pil = Image.fromarray(seg_img)
+                        img_tk = ImageTk.PhotoImage(img_pil)
+                        
+                        self.segmentation_label.config(image=img_tk, text="")
+                        self.segmentation_label.image = img_tk
+                        print("✅ Segmentation visualization displayed!")
+                else:
+                    print("❌ Segmentation mask is None")
+            else:
+                print("⚠️ Segmentation model not loaded, skipping segmentation")
+                self.segmentation_label.config(text="Segmentation model\nnot available\n\nTrain model first using\nsegtrain.py")
+            
             # Update results
             self.prediction_label.config(text=top_class)
             self.confidence_label.config(text=f"{top_confidence:.2f}%")
@@ -534,6 +664,73 @@ class SkinDiseaseClassifierUI:
             import traceback
             traceback.print_exc()
             messagebox.showerror("Error", f"Classification failed:\n{str(e)}")
+    
+    def predict_segmentation(self, img):
+        """Predict lesion segmentation using U-Net"""
+        try:
+            print("🎯 Running U-Net segmentation...")
+            
+            # Preprocess for segmentation
+            img_resized = cv2.resize(img, (320, 320))
+            
+            # Normalize
+            transform = A.Compose([
+                A.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+                ToTensorV2()
+            ])
+            
+            transformed = transform(image=img_resized)
+            img_tensor = transformed['image'].unsqueeze(0).to(self.device)
+            
+            # Predict
+            with torch.no_grad():
+                output = self.seg_model(img_tensor)
+                mask = torch.sigmoid(output) > 0.5
+                mask = mask[0, 0].cpu().numpy().astype(np.uint8)
+            
+            # Resize mask to original image size
+            h, w = img.shape[:2]
+            mask = cv2.resize(mask, (w, h), interpolation=cv2.INTER_NEAREST)
+            
+            print(f"   ✅ Segmentation complete! Mask size: {mask.shape}")
+            
+            return mask
+            
+        except Exception as e:
+            print(f"❌ Error in segmentation: {e}")
+            import traceback
+            traceback.print_exc()
+            return None
+    
+    def create_segmentation_overlay(self, img, mask):
+        """Create segmentation overlay visualization"""
+        try:
+            # Create colored overlay
+            overlay = img.copy()
+            
+            # Green overlay for lesion
+            overlay[mask > 0] = overlay[mask > 0] * 0.5 + np.array([0, 255, 0]) * 0.5
+            
+            # Draw contours
+            contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+            cv2.drawContours(overlay, contours, -1, (0, 255, 0), 2)
+            
+            # Add text with area
+            total_pixels = np.sum(mask > 0)
+            img_pixels = mask.shape[0] * mask.shape[1]
+            percentage = (total_pixels / img_pixels) * 100
+            
+            text = f"Lesion Area: {percentage:.1f}%"
+            cv2.putText(overlay, text, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 
+                       0.7, (0, 255, 0), 2)
+            
+            print(f"   ✅ Segmentation overlay created")
+            
+            return overlay
+            
+        except Exception as e:
+            print(f"❌ Error creating segmentation overlay: {e}")
+            return img
     
     def open_camera(self):
         """Open camera"""
