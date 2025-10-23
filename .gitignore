@@ -1,0 +1,223 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual Environment
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Jupyter Notebook
+.ipynb_checkpoints
+*.ipynb_checkpoints/
+
+# Machine Learning Models
+*.h5
+*.hdf5
+*.keras
+*.pb
+*.pth
+*.pt
+*.ckpt
+*.weights
+*.caffemodel
+*.onnx
+*.tflite
+model/
+models/best_model/
+models/checkpoints/
+saved_models/
+weights/
+
+# Segmentation Models
+segmentation_models/
+seg_models/
+*.safetensors
+
+# SAM Models (Segment Anything)
+sam_*.pth
+segment_anything_*.pth
+
+# TensorBoard Logs
+logs/
+tensorboard/
+runs/
+tb_logs/
+lightning_logs/
+
+# Training Outputs
+output/
+outputs/
+results/
+experiments/
+training_results/
+
+# Dataset Files (Large)
+dataset/
+datasets/
+data/
+segdataset/
+segdataset_processed/
+*.zip
+*.tar
+*.tar.gz
+*.rar
+*.7z
+
+# Image Files (if too large)
+# Uncomment if you don't want to track images
+# *.jpg
+# *.jpeg
+# *.png
+# *.bmp
+# *.tif
+# *.tiff
+# *.gif
+
+# Processed Data
+processed/
+preprocessed/
+augmented/
+cache/
+*.npy
+*.npz
+*.pkl
+*.pickle
+
+# Annotations & Labels
+annotations/
+labels/
+masks/
+segmentation_masks/
+*.json
+*.xml
+*.txt
+
+# Exclude specific annotation files if needed
+
+!labels.txt
+
+# Training Checkpoints
+checkpoint/
+checkpoints/
+*.ckpt.*
+
+# Confusion Matrix & Plots
+*.png
+*.pdf
+confusion_matrix*.png
+training_plot*.png
+!architecture.png
+!logo.png
+
+# CSV Files (training logs)
+*.csv
+training_log*.csv
+validation_log*.csv
+
+# Temporary Files
+tmp/
+temp/
+*.tmp
+*.bak
+*.swp
+*.cache
+
+# OS Files
+.DS_Store
+Thumbs.db
+desktop.ini
+*.lnk
+
+# MLflow
+mlruns/
+mlartifacts/
+
+# Weights & Biases
+wandb/
+
+# DVC (Data Version Control)
+.dvc/
+*.dvc
+
+# Large Video Files
+*.mp4
+*.avi
+*.mov
+*.mkv
+
+# Documentation Build
+docs/_build/
+site/
+
+# Test Coverage
+.coverage
+.pytest_cache/
+htmlcov/
+
+# Environment Variables
+.env
+.env.local
+.env.*.local
+
+# Segmentation Specific
+segmentation_results/
+predicted_masks/
+mask_predictions/
+overlay_results/
+
+# YOLO / Detection
+runs/detect/
+runs/train/
+runs/val/
+yolov*/
+
+# Augmentation Cache
+albumentations_cache/
+augmentation_cache/
+
+# Logs
+*.log
+*.out
+*.err
+
+# Backup Files
+backup/
+backups/
+*.backup
+
+# Compressed Models
+*.zip
+*.tar.gz
+model_archive/
