@@ -49,26 +49,39 @@ function App() {
         </div>
       </section>
 
-      {/* Features Section */}
-      <section className="features" id="features">
-        <div className="container">
-          <h2 className="section-title">Our Technology</h2>
-          <div className="features-grid">
-            <div className="feature-card">
-              <div className="feature-icon">🎯</div>
-              <h3>Classification</h3>
-              <p>10 different skin disease categories with 95%+ accuracy using MobileNetV2</p>
-            </div>
-            <div className="feature-card">
-              <div className="feature-icon">✂️</div>
-              <h3>Segmentation</h3>
-              <p>U-Net based lesion segmentation with ResNet34 backbone for precise boundary detection</p>
-            </div>
-            <div className="feature-card">
-              <div className="feature-icon">🔥</div>
-              <h3>Explainability</h3>
-              <p>Grad-CAM visualization showing exactly which regions influenced the diagnosis</p>
-            </div>
+      {/* Features Section with Scroll Snapping */}
+      <section className="section" id="classification">
+        <div className="content">
+          <div className="feature-content-wrapper">
+            <div className="feature-icon">🎯</div>
+            <h2 className="feature-title">Classification</h2>
+            <p className="feature-description">
+              10 different skin disease categories with 95%+ accuracy using MobileNetV2 architecture
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section className="section" id="segmentation">
+        <div className="content">
+          <div className="feature-content-wrapper">
+            <div className="feature-icon">✂️</div>
+            <h2 className="feature-title">Segmentation</h2>
+            <p className="feature-description">
+              U-Net based lesion segmentation with ResNet34 backbone for precise boundary detection
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section className="section" id="explainability">
+        <div className="content">
+          <div className="feature-content-wrapper">
+            <div className="feature-icon">🔥</div>
+            <h2 className="feature-title">Explainability</h2>
+            <p className="feature-description">
+              Grad-CAM visualization showing exactly which regions influenced the AI diagnosis
+            </p>
           </div>
         </div>
       </section>

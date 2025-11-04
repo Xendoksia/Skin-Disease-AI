@@ -5,13 +5,25 @@
 }
 
 html {
+  /* Create a snapping rule on the html element */
   scroll-snap-type: y mandatory;
   scroll-behavior: smooth;
+  
+  /* Create a timeline scope, so we can target any element on the page */
+  timeline-scope: --section;
+}
+
+body {
+  background-color: white;
+}
+
+.content {
+  background-color: black;
 }
 
 .App {
   min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: white;
 }
 
 /* Header */
@@ -65,6 +77,7 @@ html {
 
 /* Hero Section */
 .hero {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   padding: 6rem 0;
   color: white;
   min-height: 100vh;
@@ -142,6 +155,95 @@ html {
 .placeholder-box {
   background: rgba(255, 255, 255, 0.1);
   backdrop-filter: blur(10px);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 20px;
+  padding: 4rem 2rem;
+  text-align: center;
+}
+
+.placeholder-box span {
+  font-size: 5rem;
+  display: block;
+  margin-bottom: 1rem;
+}
+
+/* Scroll Snapping Sections - Classification, Segmentation, Explainability */
+.section {
+  /* Creating a snapping rule on the section element */
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
+
+  /* Attach the timeline to the section element*/
+  view-timeline: --section;
+
+  /* Set each section to the full dynamic height of the viewport */
+  height: 100vh;
+}
+
+.content {
+  /* Fix the content, so it doesn't scroll with the section */
+  overflow: hidden;
+  position: fixed;
+  inset: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 2rem;
+
+  /* Animate the content based on the section scrolling */
+  animation: horizontal-scroll ease-in-out both;
+  animation-timeline: --section;
+}
+
+@keyframes horizontal-scroll {
+  0% {
+    transform: translate3d(100%, 0%, 0);
+    opacity: 0;
+  }
+
+  50% {
+    transform: none;
+    opacity: 1;
+  }
+
+  100% {
+    transform: translate3d(-100%, 0%, 0);
+    opacity: 0;
+  }
+}
+
+.feature-content-wrapper {
+  max-width: 800px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 5rem 4rem;
+  border-radius: 30px;
+  text-align: center;
+  color: white;
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.3);
+}
+
+.feature-icon {
+  font-size: 6rem;
+  margin-bottom: 2rem;
+  display: block;
+}
+
+.feature-title {
+  font-size: 3.5rem;
+  margin-bottom: 2rem;
+  font-weight: 800;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.feature-description {
+  font-size: 1.4rem;
+  line-height: 1.8;
+  opacity: 0.95;
+}
+
+.placeholder-box {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
   border: 2px solid rgba(255, 255, 255, 0.2);
   border-radius: 20px;
   padding: 4rem;
@@ -163,67 +265,22 @@ html {
   color: white;
 }
 
-/* Features Section */
-.features {
-  background: white;
-  padding: 6rem 0;
-  min-height: 100vh;
-  display: flex;
-  align-items: center;
-  scroll-snap-align: start;
-}
-
-.section-title {
-  text-align: center;
-  font-size: 2.5rem;
-  font-weight: 800;
-  color: #333;
-  margin-bottom: 3rem;
-}
-
-.features-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 2rem;
-}
-
-.feature-card {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  padding: 2rem;
-  border-radius: 16px;
-  text-align: center;
-  color: white;
-  transition: transform 0.3s;
-}
-
-.feature-card:hover {
-  transform: translateY(-10px);
-}
-
-.feature-icon {
-  font-size: 3rem;
-  margin-bottom: 1rem;
-}
-
-.feature-card h3 {
-  font-size: 1.5rem;
-  margin-bottom: 1rem;
-}
-
-.feature-card p {
-  opacity: 0.95;
-  line-height: 1.6;
-}
-
 /* Stats Section */
 .stats {
   background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
-  padding: 4rem 0;
+  padding: 6rem 2rem;
   color: white;
+  position: relative;
+  z-index: 10;
+  scroll-snap-align: start;
   min-height: 100vh;
   display: flex;
   align-items: center;
-  scroll-snap-align: start;
+  justify-content: center;
+}
+
+.stats .container {
+  width: 100%;
 }
 
 .stats-grid {
@@ -246,10 +303,12 @@ html {
 
 /* Footer */
 .footer {
-  background: rgba(0, 0, 0, 0.2);
+  background: #2d3748;
   color: white;
   text-align: center;
-  padding: 2rem 0;
+  padding: 3rem 0;
+  position: relative;
+  z-index: 10;
 }
 
 /* Animations */
@@ -281,16 +340,24 @@ html {
     grid-template-columns: 1fr;
   }
   
-  .features-grid {
-    grid-template-columns: 1fr;
-  }
-  
   .stats-grid {
     grid-template-columns: repeat(2, 1fr);
   }
   
   .hero-title {
     font-size: 2.5rem;
+  }
+  
+  .feature-title {
+    font-size: 2.5rem;
+  }
+
+  .feature-description {
+    font-size: 1.2rem;
+  }
+
+  .feature-content-wrapper {
+    padding: 3rem 2rem;
   }
   
   .nav {
