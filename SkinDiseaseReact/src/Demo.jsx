@@ -76,7 +76,7 @@ function Demo({ onBack }) {
     }
   }
 
-  // Mock analysis function (replace with actual API call)
+  // Real API analysis function
   const analyzeImage = async () => {
     if (!imagePreview) {
       alert("Please upload or capture an image first")
@@ -85,35 +85,118 @@ function Demo({ onBack }) {
 
     setIsAnalyzing(true)
     
-    // Simulate API call
-    setTimeout(() => {
-      setResults({
-        classification: {
-          disease: "Melanocytic Nevi (NV)",
-          confidence: 94.7,
-          topPredictions: [
-            { name: "Melanocytic Nevi (NV)", probability: 94.7 },
-            { name: "Melanoma", probability: 3.2 },
-            { name: "Benign Keratosis", probability: 1.5 }
-          ]
-        },
-        segmentation: imagePreview, // In real app, this would be the segmented image
-        gradcam: imagePreview, // In real app, this would be the Grad-CAM visualization
-        recommendations: {
-          severity: "Low Risk",
-          description: "Based on the AI analysis, this lesion shows characteristics consistent with a benign melanocytic nevus (common mole).",
-          recommendations: [
-            "Monitor for any changes in size, shape, or color",
-            "Schedule routine dermatological check-ups annually",
-            "Use sunscreen (SPF 30+) to prevent UV damage",
-            "Avoid excessive sun exposure during peak hours",
-            "Consider professional photography for baseline documentation"
-          ],
-          warning: "This AI analysis is for informational purposes only and should not replace professional medical advice. Please consult a dermatologist for proper diagnosis and treatment."
-        }
+    try {
+      // Convert base64 to blob
+      const response = await fetch(imagePreview)
+      const blob = await response.blob()
+      
+      const formData = new FormData()
+      formData.append('image', blob, 'image.jpg')
+      
+      // API base URL
+      const API_BASE_URL = 'http://localhost:5000/api'
+      
+      // Classification
+      console.log('Requesting classification...')
+      const classifyRes = await fetch(`${API_BASE_URL}/classify`, {
+        method: 'POST',
+        body: formData
       })
+      
+      if (!classifyRes.ok) {
+        throw new Error(`Classification failed: ${classifyRes.statusText}`)
+      }
+      
+      const classifyData = await classifyRes.json()
+      console.log('Classification result:', classifyData)
+      
+      // Segmentation
+      console.log('Requesting segmentation...')
+      const segmentFormData = new FormData()
+      segmentFormData.append('image', blob, 'image.jpg')
+      
+      const segmentRes = await fetch(`${API_BASE_URL}/segment`, {
+        method: 'POST',
+        body: segmentFormData
+      })
+      
+      const segmentBlob = await segmentRes.blob()
+      const segmentUrl = URL.createObjectURL(segmentBlob)
+      console.log('Segmentation complete')
+      
+      // Grad-CAM
+      console.log('Requesting Grad-CAM...')
+      const gradcamFormData = new FormData()
+      gradcamFormData.append('image', blob, 'image.jpg')
+      
+      const gradcamRes = await fetch(`${API_BASE_URL}/gradcam`, {
+        method: 'POST',
+        body: gradcamFormData
+      })
+      
+      const gradcamBlob = await gradcamRes.blob()
+      const gradcamUrl = URL.createObjectURL(gradcamBlob)
+      console.log('Grad-CAM complete')
+      
+      // Generate recommendations based on classification
+      const recommendations = generateRecommendations(classifyData)
+      
+      setResults({
+        classification: classifyData,
+        segmentation: segmentUrl,
+        gradcam: gradcamUrl,
+        recommendations: recommendations
+      })
+      
+      console.log('Analysis complete!')
+      
+    } catch (error) {
+      console.error('Error during analysis:', error)
+      alert(`Analysis failed: ${error.message}. Please make sure the backend server is running on http://localhost:5000`)
+    } finally {
       setIsAnalyzing(false)
-    }, 2000)
+    }
+  }
+  
+  // Generate recommendations based on classification results
+  const generateRecommendations = (classifyData) => {
+    const confidence = classifyData.confidence
+    const disease = classifyData.disease
+    
+    let severity = "Low Risk"
+    let severityColor = "low-risk"
+    
+    if (disease.toLowerCase().includes("melanoma") || disease.toLowerCase().includes("carcinoma")) {
+      severity = "High Risk"
+      severityColor = "high-risk"
+    } else if (confidence < 80) {
+      severity = "Medium Risk"
+      severityColor = "medium-risk"
+    }
+    
+    const baseRecommendations = [
+      "Monitor for any changes in size, shape, or color",
+      "Use sunscreen (SPF 30+) to prevent UV damage",
+      "Avoid excessive sun exposure during peak hours"
+    ]
+    
+    if (severity === "High Risk") {
+      baseRecommendations.unshift("⚠️ Consult a dermatologist immediately for professional evaluation")
+      baseRecommendations.push("Consider getting a biopsy if recommended by your doctor")
+    } else if (severity === "Medium Risk") {
+      baseRecommendations.unshift("Schedule a dermatological check-up within the next month")
+      baseRecommendations.push("Take photos to track changes over time")
+    } else {
+      baseRecommendations.unshift("Schedule routine dermatological check-ups annually")
+      baseRecommendations.push("Consider professional photography for baseline documentation")
+    }
+    
+    return {
+      severity: severity,
+      description: `Based on the AI analysis with ${confidence.toFixed(1)}% confidence, this lesion shows characteristics consistent with ${disease}.`,
+      recommendations: baseRecommendations,
+      warning: "⚠️ This AI analysis is for informational purposes only and should not replace professional medical advice. Please consult a dermatologist for proper diagnosis and treatment."
+    }
   }
 
   return (
