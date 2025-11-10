@@ -90,17 +90,17 @@ function Demo({ onBack }) {
       const response = await fetch(imagePreview)
       const blob = await response.blob()
       
-      const formData = new FormData()
-      formData.append('image', blob, 'image.jpg')
-      
       // API base URL
       const API_BASE_URL = 'http://localhost:5000/api'
       
       // Classification
       console.log('Requesting classification...')
+      const classifyFormData = new FormData()
+      classifyFormData.append('image', blob, 'image.jpg')
+      
       const classifyRes = await fetch(`${API_BASE_URL}/classify`, {
         method: 'POST',
-        body: formData
+        body: classifyFormData
       })
       
       if (!classifyRes.ok) {
@@ -108,7 +108,7 @@ function Demo({ onBack }) {
       }
       
       const classifyData = await classifyRes.json()
-      console.log('Classification result:', classifyData)
+      console.log('Classification complete:', classifyData)
       
       // Segmentation
       console.log('Requesting segmentation...')
@@ -120,12 +120,16 @@ function Demo({ onBack }) {
         body: segmentFormData
       })
       
+      if (!segmentRes.ok) {
+        throw new Error(`Segmentation failed: ${segmentRes.statusText}`)
+      }
+      
       const segmentBlob = await segmentRes.blob()
       const segmentUrl = URL.createObjectURL(segmentBlob)
       console.log('Segmentation complete')
       
-      // Grad-CAM
-      console.log('Requesting Grad-CAM...')
+      // GradCAM
+      console.log('Requesting GradCAM...')
       const gradcamFormData = new FormData()
       gradcamFormData.append('image', blob, 'image.jpg')
       
@@ -134,18 +138,27 @@ function Demo({ onBack }) {
         body: gradcamFormData
       })
       
-      const gradcamBlob = await gradcamRes.blob()
-      const gradcamUrl = URL.createObjectURL(gradcamBlob)
-      console.log('Grad-CAM complete')
-      
-      // Generate recommendations based on classification
-      const recommendations = generateRecommendations(classifyData)
+      let gradcamUrl = null
+      if (gradcamRes.ok) {
+        const gradcamBlob = await gradcamRes.blob()
+        gradcamUrl = URL.createObjectURL(gradcamBlob)
+        console.log('GradCAM complete')
+      } else {
+        console.warn('GradCAM failed, continuing without it')
+      }
       
       setResults({
         classification: classifyData,
         segmentation: segmentUrl,
         gradcam: gradcamUrl,
-        recommendations: recommendations
+        recommendations: generateRecommendations(classifyData)
+      })
+      
+      console.log('Results set:', {
+        hasClassification: !!classifyData,
+        hasSegmentation: !!segmentUrl,
+        hasGradcam: !!gradcamUrl,
+        classifyData: classifyData
       })
       
       console.log('Analysis complete!')
@@ -158,43 +171,86 @@ function Demo({ onBack }) {
     }
   }
   
-  // Generate recommendations based on classification results
+  // Generate recommendations based on classification
   const generateRecommendations = (classifyData) => {
+    if (!classifyData) {
+      return {
+        severity: "Analysis Pending",
+        description: "Classification data not available",
+        recommendations: ["Please ensure the backend is running"],
+        warning: "⚠️ This AI analysis is for informational purposes only."
+      }
+    }
+
+    const disease = classifyData.predicted_class
     const confidence = classifyData.confidence
-    const disease = classifyData.disease
     
     let severity = "Low Risk"
     let severityColor = "low-risk"
     
-    if (disease.toLowerCase().includes("melanoma") || disease.toLowerCase().includes("carcinoma")) {
-      severity = "High Risk"
-      severityColor = "high-risk"
-    } else if (confidence < 80) {
-      severity = "Medium Risk"
+    // Determine severity based on disease type and confidence
+    const highRiskDiseases = ["Melanoma", "Basal Cell Carcinoma (BCC)"]
+    const moderateRiskDiseases = ["Atopic Dermatitis", "Psoriasis pictures Lichen Planus and related diseases"]
+    
+    if (highRiskDiseases.some(d => disease.includes(d))) {
+      severity = confidence > 0.7 ? "High Risk" : "Moderate Risk"
+      severityColor = confidence > 0.7 ? "high-risk" : "medium-risk"
+    } else if (moderateRiskDiseases.some(d => disease.includes(d))) {
+      severity = "Moderate Risk"
       severityColor = "medium-risk"
+    } else {
+      severity = confidence > 0.8 ? "Low Risk" : "Moderate Risk"
+      severityColor = confidence > 0.8 ? "low-risk" : "medium-risk"
     }
     
     const baseRecommendations = [
+      `Detection confidence: ${(confidence * 100).toFixed(1)}%`,
+      "Schedule a consultation with a dermatologist for professional diagnosis",
       "Monitor for any changes in size, shape, or color",
-      "Use sunscreen (SPF 30+) to prevent UV damage",
-      "Avoid excessive sun exposure during peak hours"
+      "Take clear photos regularly to track progression",
+      "Avoid self-diagnosis and self-medication"
     ]
     
-    if (severity === "High Risk") {
-      baseRecommendations.unshift("⚠️ Consult a dermatologist immediately for professional evaluation")
-      baseRecommendations.push("Consider getting a biopsy if recommended by your doctor")
-    } else if (severity === "Medium Risk") {
-      baseRecommendations.unshift("Schedule a dermatological check-up within the next month")
-      baseRecommendations.push("Take photos to track changes over time")
+    // Disease-specific recommendations
+    let specificRecommendations = []
+    if (disease.includes("Melanoma")) {
+      specificRecommendations = [
+        "⚠️ Urgent: Consult a dermatologist immediately",
+        "Avoid sun exposure and use high SPF sunscreen",
+        "Do not attempt to remove or treat the lesion yourself",
+        "Early detection is crucial for successful treatment"
+      ]
+    } else if (disease.includes("Basal Cell Carcinoma")) {
+      specificRecommendations = [
+        "Schedule a dermatologist appointment within 1-2 weeks",
+        "Protect the area from sun exposure",
+        "Document any changes with photos",
+        "Treatment is highly effective when caught early"
+      ]
+    } else if (disease.includes("Eczema") || disease.includes("Atopic Dermatitis")) {
+      specificRecommendations = [
+        "Keep the area moisturized with fragrance-free products",
+        "Avoid known triggers (harsh soaps, allergens, stress)",
+        "Consider over-the-counter hydrocortisone cream for mild cases",
+        "Consult a dermatologist for persistent or severe symptoms"
+      ]
     } else {
-      baseRecommendations.unshift("Schedule routine dermatological check-ups annually")
-      baseRecommendations.push("Consider professional photography for baseline documentation")
+      specificRecommendations = [
+        "Maintain good skin hygiene",
+        "Use sunscreen (SPF 30+) daily",
+        "Keep the affected area clean and dry",
+        "Avoid scratching or picking at the lesion"
+      ]
     }
     
     return {
       severity: severity,
-      description: `Based on the AI analysis with ${confidence.toFixed(1)}% confidence, this lesion shows characteristics consistent with ${disease}.`,
-      recommendations: baseRecommendations,
+      description: `Detected ${disease} with ${(confidence * 100).toFixed(1)}% confidence. ${
+        confidence > 0.7 
+          ? "The model is relatively confident in this prediction." 
+          : "Confidence level is moderate. Additional professional evaluation recommended."
+      }`,
+      recommendations: [...baseRecommendations, ...specificRecommendations],
       warning: "⚠️ This AI analysis is for informational purposes only and should not replace professional medical advice. Please consult a dermatologist for proper diagnosis and treatment."
     }
   }
@@ -271,33 +327,52 @@ function Demo({ onBack }) {
         {results && (
           <div className="results-section">
             {/* Classification Results */}
-            <div className="result-card classification-card">
-              <h2>🎯 Classification Results</h2>
-              <div className="classification-result">
-                <div className="main-prediction">
-                  <h3>{results.classification.disease}</h3>
-                  <div className="confidence-bar">
-                    <div 
-                      className="confidence-fill"
-                      style={{ width: `${results.classification.confidence}%` }}
-                    ></div>
-                  </div>
-                  <p className="confidence-text">
-                    Confidence: {results.classification.confidence}%
-                  </p>
-                </div>
-                
-                <div className="top-predictions">
-                  <h4>Top Predictions:</h4>
-                  {results.classification.topPredictions.map((pred, index) => (
-                    <div key={index} className="prediction-item">
-                      <span className="prediction-name">{pred.name}</span>
-                      <span className="prediction-prob">{pred.probability}%</span>
+            {results.classification && (
+              <div className="result-card classification-card">
+                <h2>🔍 Classification Results</h2>
+                <div className="classification-result">
+                  <div className="main-prediction">
+                    <h3>{results.classification.predicted_class}</h3>
+                    <div className="confidence-bar">
+                      <div 
+                        className="confidence-fill" 
+                        style={{ width: `${results.classification.confidence * 100}%` }}
+                      ></div>
                     </div>
-                  ))}
+                    <p className="confidence-text">
+                      Confidence: {(results.classification.confidence * 100).toFixed(1)}%
+                    </p>
+                  </div>
+                  
+                  {results.classification.top_predictions && (
+                    <div className="top-predictions">
+                      <h4>Other Possibilities:</h4>
+                      <ul>
+                        {results.classification.top_predictions.slice(1, 4).map((pred, index) => (
+                          <li key={index}>
+                            <span className="pred-name">{pred.class_name}</span>
+                            <span className="pred-conf">{(pred.confidence * 100).toFixed(1)}%</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
                 </div>
               </div>
-            </div>
+            )}
+
+            {/* GradCAM Visualization */}
+            {results.gradcam && (
+              <div className="result-card gradcam-card">
+                <h2>🎨 AI Attention Map (Grad-CAM)</h2>
+                <div className="gradcam-result">
+                  <img src={results.gradcam} alt="GradCAM" />
+                  <p className="result-description">
+                    Heat map showing which areas the AI focused on for classification
+                  </p>
+                </div>
+              </div>
+            )}
 
             {/* Segmentation Results */}
             <div className="result-card segmentation-card">
@@ -306,17 +381,6 @@ function Demo({ onBack }) {
                 <img src={results.segmentation} alt="Segmentation" />
                 <p className="result-description">
                   Precise boundary detection showing the exact lesion area
-                </p>
-              </div>
-            </div>
-
-            {/* Grad-CAM Visualization */}
-            <div className="result-card gradcam-card">
-              <h2>🔥 Explainability (Grad-CAM)</h2>
-              <div className="gradcam-result">
-                <img src={results.gradcam} alt="Grad-CAM" />
-                <p className="result-description">
-                  Heat map showing which regions influenced the AI decision
                 </p>
               </div>
             </div>

@@ -29,6 +29,9 @@ env/
 ENV/
 env.bak/
 venv.bak/
+.venv/
+pyvenv.cfg
+pip-selfcheck.json
 
 # IDE
 .vscode/
