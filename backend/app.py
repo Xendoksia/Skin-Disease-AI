@@ -9,6 +9,11 @@ import torch
 import segmentation_models_pytorch as smp
 import tensorflow as tf
 from tensorflow import keras
+from openai import OpenAI
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 app = Flask(__name__)
 CORS(app, resources={
@@ -30,6 +35,9 @@ classification_model = None
 segmentation_model = None
 class_names = []
 device = None
+
+# OpenAI API Key (Load from environment variable)
+OPENAI_API_KEY = os.getenv('OPENAI_API_KEY', 'your-api-key-here')
 
 print("\n" + "="*60)
 print("  Skin Disease Analysis API - Local Models")
@@ -399,9 +407,112 @@ def analyze_complete():
         traceback.print_exc()
         return jsonify({'error': str(e)}), 500
 
+@app.route('/api/chat', methods=['POST'])
+def chat():
+    """ChatGPT endpoint for medical advice based on diagnosis"""
+    try:
+        data = request.get_json()
+        
+        if not data:
+            return jsonify({'error': 'No data provided'}), 400
+        
+        user_message = data.get('message', '')
+        disease = data.get('disease', '')
+        confidence = data.get('confidence', 0)
+        conversation_history = data.get('history', [])
+        
+        if not user_message:
+            return jsonify({'error': 'No message provided'}), 400
+        
+        # Initialize OpenAI client with backend API key
+        client = OpenAI(api_key=OPENAI_API_KEY)
+        
+        # System prompt for medical context
+        system_prompt = f"""You are a helpful dermatology assistant AI. You provide information about skin diseases, their symptoms, and general care recommendations.
+
+IMPORTANT DISCLAIMERS:
+- You are NOT a replacement for professional medical advice
+- Always recommend consulting a qualified dermatologist
+- Do not provide specific medication dosages
+- Focus on general care, prevention, and when to seek medical help
+
+Current Context:
+- Diagnosed Disease: {disease}
+- AI Confidence: {confidence:.1%}
+- Note: This is an AI-generated diagnosis and should be verified by a medical professional
+
+Provide helpful, accurate, and compassionate responses about:
+1. General information about the condition
+2. Common symptoms and characteristics
+3. General skincare recommendations
+4. When to seek immediate medical attention
+5. Lifestyle modifications that may help
+6. Prevention tips
+
+Always maintain a professional, empathetic tone and emphasize the importance of professional medical consultation."""
+
+        # Build messages array
+        messages = [{"role": "system", "content": system_prompt}]
+        
+        # Add conversation history
+        for msg in conversation_history:
+            messages.append({
+                "role": msg.get('role', 'user'),
+                "content": msg.get('content', '')
+            })
+        
+        # Add current user message
+        messages.append({"role": "user", "content": user_message})
+        
+        print(f"[CHAT] User: {user_message[:50]}...")
+        
+        # Call OpenAI API
+        response = client.chat.completions.create(
+            model="gpt-4o-mini",  # or "gpt-3.5-turbo" for cheaper option
+            messages=messages,
+            max_tokens=500,
+            temperature=0.7,
+            top_p=0.9
+        )
+        
+        assistant_message = response.choices[0].message.content
+        
+        print(f"[CHAT] Assistant: {assistant_message[:50]}...")
+        
+        return jsonify({
+            'message': assistant_message,
+            'usage': {
+                'prompt_tokens': response.usage.prompt_tokens,
+                'completion_tokens': response.usage.completion_tokens,
+                'total_tokens': response.usage.total_tokens
+            }
+        })
+        
+    except Exception as e:
+        error_message = str(e)
+        print(f"[CHAT ERROR] {error_message}")
+        
+        # Check for specific OpenAI errors
+        if '429' in error_message or 'quota' in error_message.lower():
+            return jsonify({
+                'error': 'OpenAI API quota exceeded. Please add credits to your OpenAI account at https://platform.openai.com/account/billing or contact the administrator.',
+                'error_type': 'quota_exceeded'
+            }), 429
+        elif '401' in error_message or 'unauthorized' in error_message.lower():
+            return jsonify({
+                'error': 'Invalid OpenAI API key. Please check your API configuration.',
+                'error_type': 'invalid_key'
+            }), 401
+        else:
+            return jsonify({
+                'error': f'Chat service error: {error_message}',
+                'error_type': 'unknown'
+            }), 500
+
 if __name__ == '__main__':
     print("\n[INFO] Starting Flask server...")
     print("[INFO] Local models loaded from disk")
     print("[INFO] Server starting on http://localhost:5000\n")
     
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    app.run(host='0.0.0.0', port=5000, debug=False, use_reloader=False)
+

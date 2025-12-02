@@ -8,9 +8,15 @@ function Demo({ onBack }) {
   const [results, setResults] = useState(null)
   const [showCamera, setShowCamera] = useState(false)
   const [isScrolled, setIsScrolled] = useState(false)
+  const [showChat, setShowChat] = useState(false)
+  const [chatMessages, setChatMessages] = useState([])
+  const [chatInput, setChatInput] = useState('')
+  const [isChatLoading, setIsChatLoading] = useState(false)
+  
   const fileInputRef = useRef(null)
   const videoRef = useRef(null)
   const canvasRef = useRef(null)
+  const chatEndRef = useRef(null)
 
   useEffect(() => {
     const handleScroll = () => {
@@ -90,8 +96,8 @@ function Demo({ onBack }) {
       const response = await fetch(imagePreview)
       const blob = await response.blob()
       
-      // API base URL
-      const API_BASE_URL = 'http://localhost:5000/api'
+      // API base URL - use environment variable or default to localhost
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api'
       
       // Classification
       console.log('Requesting classification...')
@@ -150,8 +156,7 @@ function Demo({ onBack }) {
       setResults({
         classification: classifyData,
         segmentation: segmentUrl,
-        gradcam: gradcamUrl,
-        recommendations: generateRecommendations(classifyData)
+        gradcam: gradcamUrl
       })
       
       console.log('Results set:', {
@@ -165,95 +170,109 @@ function Demo({ onBack }) {
       
     } catch (error) {
       console.error('Error during analysis:', error)
-      alert(`Analysis failed: ${error.message}. Please make sure the backend server is running on http://localhost:5000`)
+      const apiUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api'
+      alert(`Analysis failed: ${error.message}. Please make sure the backend server is running at ${apiUrl}`)
     } finally {
       setIsAnalyzing(false)
     }
   }
-  
-  // Generate recommendations based on classification
-  const generateRecommendations = (classifyData) => {
-    if (!classifyData) {
-      return {
-        severity: "Analysis Pending",
-        description: "Classification data not available",
-        recommendations: ["Please ensure the backend is running"],
-        warning: "⚠️ This AI analysis is for informational purposes only."
-      }
-    }
 
-    const disease = classifyData.predicted_class
-    const confidence = classifyData.confidence
-    
-    let severity = "Low Risk"
-    let severityColor = "low-risk"
-    
-    // Determine severity based on disease type and confidence
-    const highRiskDiseases = ["Melanoma", "Basal Cell Carcinoma (BCC)"]
-    const moderateRiskDiseases = ["Atopic Dermatitis", "Psoriasis pictures Lichen Planus and related diseases"]
-    
-    if (highRiskDiseases.some(d => disease.includes(d))) {
-      severity = confidence > 0.7 ? "High Risk" : "Moderate Risk"
-      severityColor = confidence > 0.7 ? "high-risk" : "medium-risk"
-    } else if (moderateRiskDiseases.some(d => disease.includes(d))) {
-      severity = "Moderate Risk"
-      severityColor = "medium-risk"
-    } else {
-      severity = confidence > 0.8 ? "Low Risk" : "Moderate Risk"
-      severityColor = confidence > 0.8 ? "low-risk" : "medium-risk"
+  // Chatbot functions
+  const openChat = () => {
+    if (!results?.classification) {
+      alert('Please analyze an image first to get diagnosis results before using the chatbot.')
+      return
     }
     
-    const baseRecommendations = [
-      `Detection confidence: ${(confidence * 100).toFixed(1)}%`,
-      "Schedule a consultation with a dermatologist for professional diagnosis",
-      "Monitor for any changes in size, shape, or color",
-      "Take clear photos regularly to track progression",
-      "Avoid self-diagnosis and self-medication"
-    ]
+    setShowChat(true)
     
-    // Disease-specific recommendations
-    let specificRecommendations = []
-    if (disease.includes("Melanoma")) {
-      specificRecommendations = [
-        "⚠️ Urgent: Consult a dermatologist immediately",
-        "Avoid sun exposure and use high SPF sunscreen",
-        "Do not attempt to remove or treat the lesion yourself",
-        "Early detection is crucial for successful treatment"
-      ]
-    } else if (disease.includes("Basal Cell Carcinoma")) {
-      specificRecommendations = [
-        "Schedule a dermatologist appointment within 1-2 weeks",
-        "Protect the area from sun exposure",
-        "Document any changes with photos",
-        "Treatment is highly effective when caught early"
-      ]
-    } else if (disease.includes("Eczema") || disease.includes("Atopic Dermatitis")) {
-      specificRecommendations = [
-        "Keep the area moisturized with fragrance-free products",
-        "Avoid known triggers (harsh soaps, allergens, stress)",
-        "Consider over-the-counter hydrocortisone cream for mild cases",
-        "Consult a dermatologist for persistent or severe symptoms"
-      ]
-    } else {
-      specificRecommendations = [
-        "Maintain good skin hygiene",
-        "Use sunscreen (SPF 30+) daily",
-        "Keep the affected area clean and dry",
-        "Avoid scratching or picking at the lesion"
-      ]
-    }
-    
-    return {
-      severity: severity,
-      description: `Detected ${disease} with ${(confidence * 100).toFixed(1)}% confidence. ${
-        confidence > 0.7 
-          ? "The model is relatively confident in this prediction." 
-          : "Confidence level is moderate. Additional professional evaluation recommended."
-      }`,
-      recommendations: [...baseRecommendations, ...specificRecommendations],
-      warning: "⚠️ This AI analysis is for informational purposes only and should not replace professional medical advice. Please consult a dermatologist for proper diagnosis and treatment."
+    // Initialize chat with welcome message if empty
+    if (chatMessages.length === 0) {
+      const welcomeMessage = {
+        role: 'assistant',
+        content: `Hello! I'm your dermatology assistant. I can help answer questions about your diagnosis of ${results.classification.predicted_class}. 
+
+Please remember:
+- This is an AI-based diagnosis and should be verified by a medical professional
+- I can provide general information and care recommendations
+- Always consult a dermatologist for professional medical advice
+
+How can I help you today?`
+      }
+      setChatMessages([welcomeMessage])
     }
   }
+
+  const sendChatMessage = async () => {
+    if (!chatInput.trim() || isChatLoading) return
+    
+    const userMessage = {
+      role: 'user',
+      content: chatInput
+    }
+    
+    setChatMessages(prev => [...prev, userMessage])
+    setChatInput('')
+    setIsChatLoading(true)
+    
+    try {
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api'
+      const response = await fetch(`${API_BASE_URL}/chat`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          message: chatInput,
+          disease: results.classification.predicted_class,
+          confidence: results.classification.confidence,
+          history: chatMessages
+        })
+      })
+      
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Chat request failed')
+      }
+      
+      const data = await response.json()
+      
+      const assistantMessage = {
+        role: 'assistant',
+        content: data.message
+      }
+      
+      setChatMessages(prev => [...prev, assistantMessage])
+      
+      // Scroll to bottom
+      setTimeout(() => {
+        chatEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+      }, 100)
+      
+    } catch (error) {
+      console.error('Chat error:', error)
+      
+      // Show user-friendly error message
+      let errorMessage = 'Failed to get response from chatbot.'
+      
+      if (error.message.includes('quota')) {
+        errorMessage = '⚠️ OpenAI API quota exceeded!\n\nThe chatbot service has reached its usage limit. Please contact the administrator to add credits at:\nhttps://platform.openai.com/account/billing'
+      } else if (error.message.includes('API key')) {
+        errorMessage = '🔑 Invalid API key. Please contact the administrator.'
+      } else {
+        errorMessage = `❌ Chat error: ${error.message}\n\nPlease try again later.`
+      }
+      
+      alert(errorMessage)
+    } finally {
+      setIsChatLoading(false)
+    }
+  }
+
+  // Scroll chat to bottom when new messages arrive
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [chatMessages])
 
   return (
     <div className="demo-page">
@@ -275,50 +294,100 @@ function Demo({ onBack }) {
         <p className="demo-subtitle">Upload or capture a photo to get instant AI-powered analysis</p>
 
         {/* Upload/Capture Section */}
+        {/* Modern Upload Section */}
         <div className="upload-section">
-          <div className="upload-options">
-            <button 
-              className="btn-upload"
-              onClick={() => fileInputRef.current.click()}
-            >
-              📁 Upload Photo
-            </button>
-            <button 
-              className="btn-camera"
-              onClick={openCamera}
-            >
-              📷 Take Photo
-            </button>
-            <input
-              type="file"
-              ref={fileInputRef}
-              onChange={handleFileUpload}
-              accept="image/*"
-              style={{ display: 'none' }}
-            />
-          </div>
+          {!imagePreview && !showCamera && (
+            <div className="upload-area-modern">
+              <div className="upload-dropzone">
+                <div className="upload-icon-wrapper">
+                  <span className="upload-icon">☁️</span>
+                </div>
+                <h3 className="upload-title">Drag & Drop Your Image</h3>
+                <p className="upload-subtitle">or choose from your device</p>
+                
+                <div className="upload-options">
+                  <button 
+                    className="btn-upload-modern"
+                    onClick={() => fileInputRef.current.click()}
+                  >
+                    <span className="btn-icon">📁</span>
+                    <span>Browse Files</span>
+                  </button>
+                  <button 
+                    className="btn-camera-modern"
+                    onClick={openCamera}
+                  >
+                    <span className="btn-icon">📷</span>
+                    <span>Open Camera</span>
+                  </button>
+                </div>
+                
+                <p className="upload-note">Supports: JPG, PNG, JPEG • Max 10MB</p>
+                
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handleFileUpload}
+                  accept="image/*"
+                  style={{ display: 'none' }}
+                />
+              </div>
+            </div>
+          )}
 
           {/* Camera View */}
           {showCamera && (
-            <div className="camera-view">
-              <video ref={videoRef} autoPlay playsInline></video>
-              <button className="btn-capture" onClick={capturePhoto}>
-                📸 Capture
-              </button>
+            <div className="camera-view-modern">
+              <div className="camera-container">
+                <video ref={videoRef} autoPlay playsInline></video>
+                <div className="camera-controls">
+                  <button className="btn-capture-modern" onClick={capturePhoto}>
+                    <span className="capture-ring"></span>
+                    <span className="capture-icon">📸</span>
+                    Capture Photo
+                  </button>
+                  <button className="btn-cancel-camera" onClick={() => setShowCamera(false)}>
+                    Cancel
+                  </button>
+                </div>
+              </div>
             </div>
           )}
 
           {/* Image Preview */}
           {imagePreview && !showCamera && (
-            <div className="image-preview">
-              <img src={imagePreview} alt="Preview" />
-              <button 
-                className="btn-analyze"
-                onClick={analyzeImage}
-                disabled={isAnalyzing}
-              >
-                {isAnalyzing ? '🔄 Analyzing...' : '🔬 Analyze Image'}
-              </button>
+            <div className="image-preview-modern">
+              <div className="preview-container">
+                <div className="preview-image-wrapper">
+                  <img src={imagePreview} alt="Preview" />
+                  <button 
+                    className="btn-remove-image"
+                    onClick={() => {
+                      setImagePreview(null)
+                      setResults(null)
+                    }}
+                  >
+                    ✕
+                  </button>
+                </div>
+                <button 
+                  className="btn-analyze-modern"
+                  onClick={analyzeImage}
+                  disabled={isAnalyzing}
+                >
+                  {isAnalyzing ? (
+                    <>
+                      <span className="analyze-spinner"></span>
+                      <span>Analyzing...</span>
+                    </>
+                  ) : (
+                    <>
+                      <span className="btn-icon">🔬</span>
+                      <span>Analyze Image</span>
+                    </>
+                  )}
+                </button>
+              </div>
             </div>
           )}
         </div>
@@ -385,35 +454,96 @@ function Demo({ onBack }) {
               </div>
             </div>
 
-            {/* AI Recommendations */}
-            <div className="result-card recommendations-card">
-              <h2>💡 AI Recommendations</h2>
-              <div className="recommendations-content">
-                <div className="severity-badge" data-severity={results.recommendations.severity.toLowerCase().replace(' ', '-')}>
-                  {results.recommendations.severity}
-                </div>
-                
-                <p className="recommendation-description">
-                  {results.recommendations.description}
-                </p>
-
-                <div className="recommendation-list">
-                  <h4>Recommendations:</h4>
-                  <ul>
-                    {results.recommendations.recommendations.map((rec, index) => (
-                      <li key={index}>{rec}</li>
-                    ))}
-                  </ul>
-                </div>
-
-                <div className="warning-box">
-                  <strong>⚠️ Important:</strong> {results.recommendations.warning}
-                </div>
-              </div>
+            {/* AI Assistant Card */}
+            <div className="result-card ai-assistant-card">
+              <h2>💬 Ask AI Assistant</h2>
+              <p className="assistant-description">
+                Have questions about your diagnosis? Our AI assistant can help answer questions about treatment, symptoms, and care recommendations.
+              </p>
+              <button 
+                className="btn-open-chat"
+                onClick={openChat}
+              >
+                <span className="chat-icon">🤖</span>
+                <span>Start Conversation</span>
+              </button>
             </div>
           </div>
         )}
       </div>
+
+      {/* Chatbot Window */}
+      {showChat && (
+        <div className="chatbot-container">
+          <div className="chatbot-header">
+            <div className="chatbot-title">
+              <span className="chatbot-icon">🤖</span>
+              <div>
+                <h3>Dermatology Assistant</h3>
+                <p className="chatbot-subtitle">
+                  Discussing: {results?.classification?.predicted_class}
+                </p>
+              </div>
+            </div>
+            <button 
+              className="chat-close-btn"
+              onClick={() => setShowChat(false)}
+              title="Close chat"
+            >
+              ✕
+            </button>
+          </div>
+
+          <div className="chatbot-messages">
+            {chatMessages.map((msg, index) => (
+              <div key={index} className={`chat-message ${msg.role}`}>
+                <div className="message-avatar">
+                  {msg.role === 'user' ? '👤' : '🤖'}
+                </div>
+                <div className="message-content">
+                  <div className="message-text">{msg.content}</div>
+                </div>
+              </div>
+            ))}
+            {isChatLoading && (
+              <div className="chat-message assistant">
+                <div className="message-avatar">🤖</div>
+                <div className="message-content">
+                  <div className="typing-indicator">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                  </div>
+                </div>
+              </div>
+            )}
+            <div ref={chatEndRef} />
+          </div>
+
+          <div className="chatbot-input">
+            <input
+              type="text"
+              placeholder="Ask about treatment, symptoms, care tips..."
+              value={chatInput}
+              onChange={(e) => setChatInput(e.target.value)}
+              onKeyPress={(e) => e.key === 'Enter' && sendChatMessage()}
+              disabled={isChatLoading}
+            />
+            <button 
+              onClick={sendChatMessage}
+              disabled={!chatInput.trim() || isChatLoading}
+              className="send-btn"
+            >
+              {isChatLoading ? '⏳' : '📤'}
+            </button>
+          </div>
+
+          <div className="chatbot-footer">
+            <small>💡 This chatbot uses GPT-4 for medical information. Always consult a real doctor.</small>
+          </div>
+        </div>
+      )}
+
       <canvas ref={canvasRef} style={{ display: 'none' }}></canvas>
     </div>
   )

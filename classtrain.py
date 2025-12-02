@@ -9,7 +9,8 @@ import numpy as np
 import shutil
 
 # Configuration
-DATA_PATH = r'C:\Users\Deniz\Desktop\skin diseases\Skin-Disease\dataset\processedCLASSIFIC'
+# Use relative paths from project root
+DATA_PATH = os.path.join(os.path.dirname(__file__), 'dataset', 'processedCLASSIFIC')
 MODEL_PATH = 'model'
 IMG_SIZE = 224
 BATCH_SIZE = 64  

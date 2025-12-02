@@ -12,8 +12,9 @@ import gc
 
 IMG_SIZE = 224
 BATCH_PROCESS_SIZE = 50  # ✅ EKLENDI: Her 50 resimdde belleği temizle
-DATASET_PATH = r'C:\Users\Deniz\Desktop\skin diseases\Skin-Disease\dataset\CLASSIFIC'
-OUTPUT_PATH = r'C:\Users\Deniz\Desktop\skin diseases\Skin-Disease\dataset\processedCLASSIFIC'
+# Use relative paths from project root
+DATASET_PATH = os.path.join(os.path.dirname(__file__), 'dataset', 'CLASSIFIC')
+OUTPUT_PATH = os.path.join(os.path.dirname(__file__), 'dataset', 'processedCLASSIFIC')
 
 class SkinDiseasePreprocessor:
     def __init__(self, dataset_path, img_size=224):
