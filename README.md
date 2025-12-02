@@ -263,7 +263,7 @@ Architecture: UnetPlusPlus
   - Binary Cross Entropy (30%) - Pixel-wise accuracy
 - **Batch Size**: 16
 - **Image Size**: 320×320
-- **Epochs**: 50
+- **Epochs**: 250
 - **Data Augmentation**:
   - Random rotation
   - Horizontal flip
@@ -483,7 +483,7 @@ Expected output:
       Device: cuda/cpu
       Architecture: unet
       Backbone: resnet34
-      ✓ Segmentation model loaded (Epoch 10)
+      ✓ Segmentation model loaded (Epoch 50)
 
 ============================================================
   Status:
@@ -926,7 +926,7 @@ python segtrain.py
    - Initialize U-Net++ with ResNet34 backbone
    - Load ImageNet weights for encoder
 
-3. **Training Loop** (50 epochs):
+3. **Training Loop** (250 epochs):
 
    - Forward pass
    - Calculate combined loss (Dice + BCE)
