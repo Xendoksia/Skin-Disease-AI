@@ -1,5 +1,10 @@
 # 🔬 SkinAI - AI-Powered Skin Disease Detection System
 
+
+<img width="1859" height="920" alt="Ekran görüntüsü 2025-12-02 144027" src="https://github.com/user-attachments/assets/4291cbbd-517b-4a01-83af-199e4812728f" />
+<img width="1833" height="827" alt="Ekran görüntüsü 2025-12-02 144125" src="https://github.com/user-attachments/assets/cb010f2c-ca46-4a5e-bcda-6c63489d226a" />
+
+
 <div align="center">
 
 ![Python](https://img.shields.io/badge/Python-3.10+-blue.svg)
