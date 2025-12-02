@@ -436,16 +436,6 @@ npm install
 npm list react vite
 ```
 
-### Step 4: Download Models
-
-The trained models are included in the repository:
-
-- **Classification**: `model/best_model.keras` (47.3 MB)
-- **Segmentation**: `segmentation_outputs/checkpoints/best_model.pth` (85.7 MB)
-- **Class Names**: `model/class_names.txt`
-
-If models are missing, you'll need to train them (see [Training Process](#-training-process)).
-
 ---
 
 ## 🚀 Usage
