@@ -27,9 +27,9 @@ class SegmentationPreprocessor:
         print("=" * 80)
         print("🔧 SEGMENTATION DATASET PREPROCESSING")
         print("=" * 80)
-        print(f"\n📂 Input: {self.input_path}")
-        print(f"📂 Output: {self.output_path}")
-        print(f"📏 Target size: {self.target_size}")
+        print(f"\n Input: {self.input_path}")
+        print(f" Output: {self.output_path}")
+        print(f" Target size: {self.target_size}")
         print()
         
         # Create output directories
@@ -49,7 +49,7 @@ class SegmentationPreprocessor:
         self.visualize_examples()
         
         print("\n" + "=" * 80)
-        print("✅ PREPROCESSING COMPLETE!")
+        print(" PREPROCESSING COMPLETE!")
         print("=" * 80)
     
     def create_output_structure(self):
@@ -57,7 +57,7 @@ class SegmentationPreprocessor:
         for split in self.splits:
             (self.output_path / split / 'images').mkdir(parents=True, exist_ok=True)
             (self.output_path / split / 'labels').mkdir(parents=True, exist_ok=True)
-        print("✅ Output directories created")
+        print(" Output directories created")
     
     def remove_hair(self, img):
         """Remove hair from skin images using morphological operations"""
@@ -145,7 +145,7 @@ class SegmentationPreprocessor:
                 # Read image
                 img = cv2.imread(str(img_path))
                 if img is None:
-                    print(f"   ⚠️  Could not read: {img_path.name}")
+                    print(f"     Could not read: {img_path.name}")
                     error_count += 1
                     continue
                 
@@ -162,7 +162,7 @@ class SegmentationPreprocessor:
                     output_label_path = output_labels_path / f"{img_path.stem}.txt"
                     shutil.copy(str(label_path), str(output_label_path))
                 else:
-                    print(f"   ⚠️  Label not found for: {img_path.name}")
+                    print(f"     Label not found for: {img_path.name}")
                     error_count += 1
                     continue
                 
@@ -172,9 +172,9 @@ class SegmentationPreprocessor:
                 print(f"   ❌ Error processing {img_path.name}: {e}")
                 error_count += 1
         
-        print(f"\n   ✅ Successfully processed: {processed_count}/{len(image_files)}")
+        print(f"\n    Successfully processed: {processed_count}/{len(image_files)}")
         if error_count > 0:
-            print(f"   ⚠️  Errors: {error_count}")
+            print(f"     Errors: {error_count}")
     
     def visualize_examples(self):
         """Create visualization comparing original vs processed images with masks"""
@@ -228,7 +228,7 @@ class SegmentationPreprocessor:
         plt.tight_layout()
         output_viz_path = 'preprocessing_examples.png'
         plt.savefig(output_viz_path, dpi=200, bbox_inches='tight')
-        print(f"\n✅ Visualization saved: {output_viz_path}")
+        print(f"\n Visualization saved: {output_viz_path}")
         
         # Create detailed comparison for one image
         self.create_detailed_comparison(image_files[0])
@@ -344,7 +344,7 @@ class SegmentationPreprocessor:
         
         plt.tight_layout()
         plt.savefig('preprocessing_detailed.png', dpi=200, bbox_inches='tight')
-        print(f"✅ Detailed visualization saved: preprocessing_detailed.png")
+        print(f" Detailed visualization saved: preprocessing_detailed.png")
 
 
 def main():
