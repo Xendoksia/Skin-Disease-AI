@@ -22,7 +22,7 @@ class SegmentationDatasetAnalyzer:
     def analyze_all(self):
         """Run complete analysis"""
         print("=" * 80)
-        print("🔍 SEGMENTATION DATASET ANALYSIS")
+        print(" SEGMENTATION DATASET ANALYSIS")
         print("=" * 80)
         
         # 1. Count files
@@ -30,34 +30,34 @@ class SegmentationDatasetAnalyzer:
         self.analyze_file_counts()
         
         # 2. Image dimensions
-        print("\n📐 2. IMAGE DIMENSIONS ANALYSIS")
+        print("\n 2. IMAGE DIMENSIONS ANALYSIS")
         self.analyze_image_dimensions()
         
         # 3. Label analysis
-        print("\n🏷️  3. LABEL ANALYSIS")
+        print("\n  3. LABEL ANALYSIS")
         self.analyze_labels()
         
         # 4. Image properties
-        print("\n🎨 4. IMAGE PROPERTIES ANALYSIS")
+        print("\n 4. IMAGE PROPERTIES ANALYSIS")
         self.analyze_image_properties()
         
         # 5. Matching analysis
-        print("\n🔗 5. IMAGE-LABEL MATCHING")
+        print("\n 5. IMAGE-LABEL MATCHING")
         self.analyze_matching()
         
         # 6. Summary
-        print("\n📝 6. SUMMARY")
+        print("\n 6. SUMMARY")
         self.print_summary()
         
         # 7. Save report
         self.save_report()
         
         # 8. Create visualizations
-        print("\n📊 7. CREATING VISUALIZATIONS")
+        print("\n 7. CREATING VISUALIZATIONS")
         self.create_visualizations()
         
         print("\n" + "=" * 80)
-        print("✅ ANALYSIS COMPLETE!")
+        print(" ANALYSIS COMPLETE!")
         print("=" * 80)
     
     def analyze_file_counts(self):
@@ -69,7 +69,7 @@ class SegmentationDatasetAnalyzer:
             labels_path = self.dataset_path / split / 'labels'
             
             if not images_path.exists() or not labels_path.exists():
-                print(f"   ⚠️  {split}: Not found!")
+                print(f"     {split}: Not found!")
                 continue
             
             num_images = len(list(images_path.glob('*.*')))
@@ -81,7 +81,7 @@ class SegmentationDatasetAnalyzer:
                 'matched': num_images == num_labels
             }
             
-            status = "✅" if num_images == num_labels else "⚠️"
+            status = "" if num_images == num_labels else "⚠️"
             print(f"   {status} {split.upper():<8} - Images: {num_images:>5} | Labels: {num_labels:>5}")
         
         total_images = sum(d['images'] for d in self.results['file_counts'].values())
@@ -115,7 +115,7 @@ class SegmentationDatasetAnalyzer:
                         aspect_ratios.append(w / h)
                         file_sizes.append(img_path.stat().st_size / 1024)  # KB
                 except Exception as e:
-                    print(f"   ⚠️  Error reading {img_path.name}: {e}")
+                    print(f"    Error reading {img_path.name}: {e}")
             
             if dimensions:
                 dim_counter = Counter(dimensions)
@@ -149,9 +149,9 @@ class SegmentationDatasetAnalyzer:
                 print(f"      • File size: {np.mean(file_sizes):.1f} KB (range: {min(file_sizes):.1f} - {max(file_sizes):.1f})")
                 
                 if len(dim_counter) == 1:
-                    print(f"      ✅ All images have SAME dimensions!")
+                    print(f"       All images have SAME dimensions!")
                 else:
-                    print(f"      ⚠️  Images have DIFFERENT dimensions!")
+                    print(f"        Images have DIFFERENT dimensions!")
     
     def analyze_labels(self):
         """Analyze YOLO format labels"""
@@ -198,7 +198,7 @@ class SegmentationDatasetAnalyzer:
                             bbox_areas.append(width * height)
                 
                 except Exception as e:
-                    print(f"   ⚠️  Error reading {label_path.name}: {e}")
+                    print(f"    Error reading {label_path.name}: {e}")
             
             if objects_per_image:
                 self.results['labels'][split] = {
@@ -306,9 +306,9 @@ class SegmentationDatasetAnalyzer:
             print(f"      • Match percentage: {len(matched) / len(image_files) * 100:.1f}%" if image_files else "      • N/A")
             
             if images_without_labels:
-                print(f"      ⚠️  Found {len(images_without_labels)} images without labels!")
+                print(f"        Found {len(images_without_labels)} images without labels!")
             if labels_without_images:
-                print(f"      ⚠️  Found {len(labels_without_images)} labels without images!")
+                print(f"        Found {len(labels_without_images)} labels without images!")
     
     def print_summary(self):
         """Print summary statistics"""
@@ -326,18 +326,18 @@ class SegmentationDatasetAnalyzer:
         all_same = all(d.get('all_same', False) for d in dimensions_data.values())
         
         if all_same:
-            print(f"      ✅ All images have the SAME dimensions!")
+            print(f"       All images have the SAME dimensions!")
         else:
-            print(f"      ⚠️  Images have DIFFERENT dimensions across splits!")
+            print(f"        Images have DIFFERENT dimensions across splits!")
         
         # Check matching
         matching_data = self.results.get('matching', {})
         all_matched = all(d.get('match_percentage', 0) == 100 for d in matching_data.values())
         
         if all_matched:
-            print(f"      ✅ All images have matching labels!")
+            print(f"       All images have matching labels!")
         else:
-            print(f"      ⚠️  Some images/labels don't match!")
+            print(f"        Some images/labels don't match!")
     
     def save_report(self):
         """Save analysis report to JSON"""
@@ -346,7 +346,7 @@ class SegmentationDatasetAnalyzer:
         with open(output_file, 'w') as f:
             json.dump(self.results, f, indent=4)
         
-        print(f"\n   💾 Report saved to: {output_file}")
+        print(f"\n    Report saved to: {output_file}")
     
     def create_visualizations(self):
         """Create visualization plots"""
@@ -449,7 +449,7 @@ class SegmentationDatasetAnalyzer:
             print(f"   📊 Visualization saved to: segmentation_analysis.png")
             
         except Exception as e:
-            print(f"   ⚠️  Could not create visualizations: {e}")
+            print(f"     Could not create visualizations: {e}")
 
 
 def main():
