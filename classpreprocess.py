@@ -11,7 +11,7 @@ import gc
 # ============================================================================
 
 IMG_SIZE = 224
-BATCH_PROCESS_SIZE = 50  # ✅ EKLENDI: Her 50 resimdde belleği temizle
+BATCH_PROCESS_SIZE = 50  #  EKLENDI: Her 50 resimdde belleği temizle
 # Use relative paths from project root
 DATASET_PATH = os.path.join(os.path.dirname(__file__), 'dataset', 'CLASSIFIC')
 OUTPUT_PATH = os.path.join(os.path.dirname(__file__), 'dataset', 'processedCLASSIFIC')
@@ -97,11 +97,11 @@ class SkinDiseasePreprocessor:
                 image_files = [f for f in os.listdir(class_path) 
                               if f.lower().endswith(('.png', '.jpg', '.jpeg', '.bmp', '.tif', '.tiff'))]
             except Exception as e:
-                print(f"  ⚠️  Error reading folder: {e}")
+                print(f"    Error reading folder: {e}")
                 continue
             
             if len(image_files) == 0:
-                print(f"  ⚠️  No images found in {class_name}")
+                print(f"  ⚠️ No images found in {class_name}")
                 continue
             
             print(f"  Found {len(image_files)} images")
@@ -156,7 +156,7 @@ class SkinDiseasePreprocessor:
         print("\n" + "="*60)
         print(f"✓ Total images processed: {total_images}")
         if failed_images > 0:
-            print(f"⚠️  Failed images: {failed_images}")
+            print(f"  Failed images: {failed_images}")
         print("="*60)
         
         if total_images == 0:
@@ -178,7 +178,7 @@ class SkinDiseasePreprocessor:
         """Save processed data to disk as folder structure (for train.py compatibility)"""
         os.makedirs(OUTPUT_PATH, exist_ok=True)
         
-        print("\n💾 Saving processed data...")
+        print("\n Saving processed data...")
         
         try:
             # Create class folders
@@ -210,7 +210,7 @@ class SkinDiseasePreprocessor:
             print(f"  ✓ Saved class_names.txt")
             
         except Exception as e:
-            print(f"❌ Error saving data: {e}")
+            print(f" Error saving data: {e}")
             import traceback
             traceback.print_exc()
             return False
@@ -221,10 +221,10 @@ class SkinDiseasePreprocessor:
 def print_dataset_info(X_train, X_test, y_train, y_test, class_names):
     """Print comprehensive dataset information"""
     print("\n" + "="*60)
-    print("📊 DATASET INFORMATION")
+    print(" DATASET INFORMATION")
     print("="*60)
     
-    print(f"\n🔢 Dataset Split:")
+    print(f"\n Dataset Split:")
     print(f"   Training samples:   {X_train.shape[0]:,}")
     print(f"   Test samples:       {X_test.shape[0]:,}")
     print(f"   Total samples:      {X_train.shape[0] + X_test.shape[0]:,}")
@@ -234,7 +234,7 @@ def print_dataset_info(X_train, X_test, y_train, y_test, class_names):
     print(f"   Image size:         {X_train.shape[1]}x{X_train.shape[2]} pixels")
     print(f"   Channels:           {X_train.shape[3]}")
     
-    print(f"\n🏷️  Classes:")
+    print(f"\n🏷️ Classes:")
     print(f"   Number of classes:  {len(class_names)}")
     
     print("\n📈 Class Distribution:")
@@ -250,7 +250,7 @@ def print_dataset_info(X_train, X_test, y_train, y_test, class_names):
     
     print("-" * 60)
     
-    print(f"\n💾 Memory Usage:")
+    print(f"\n Memory Usage:")
     print(f"   Training data:      {X_train.nbytes / (1024**2):.2f} MB")
     print(f"   Test data:          {X_test.nbytes / (1024**2):.2f} MB")
     print(f"   Total:              {(X_train.nbytes + X_test.nbytes) / (1024**2):.2f} MB")
@@ -265,7 +265,7 @@ def main():
     
     # Check if dataset path exists
     if not os.path.exists(DATASET_PATH):
-        print(f"\n❌ Error: Dataset path not found!")
+        print(f"\n Error: Dataset path not found!")
         print(f"   Expected path: {DATASET_PATH}")
         print(f"   Current directory: {os.getcwd()}")
         print("\nPlease check:")
@@ -284,21 +284,21 @@ def main():
     
     # Load and preprocess images
     print("\n" + "="*60)
-    print("🖼️  LOADING AND PREPROCESSING IMAGES")
+    print("  LOADING AND PREPROCESSING IMAGES")
     print("="*60)
     
     X, y = preprocessor.load_and_preprocess_images()
     
     if X is None or y is None:
-        print("\n❌ Preprocessing failed!")
+        print("\n Preprocessing failed!")
         return
     
     if len(X) == 0:
-        print("\n❌ No images were processed!")
+        print("\n No images were processed!")
         return
     
     # Split into train and test sets
-    print("\n📊 Splitting dataset into train/test...")
+    print("\n Splitting dataset into train/test...")
     try:
         X_train, X_test, y_train, y_test = train_test_split(
             X, y, 
@@ -306,9 +306,9 @@ def main():
             random_state=42, 
             stratify=y
         )
-        print("  ✓ Dataset split complete (80% train, 20% test)")
+        print("   Dataset split complete (80% train, 20% test)")
     except Exception as e:
-        print(f"❌ Error splitting dataset: {e}")
+        print(f" Error splitting dataset: {e}")
         return
     
     # Print dataset information
@@ -319,13 +319,13 @@ def main():
     
     if success:
         print("\n" + "="*60)
-        print("✅ PREPROCESSING COMPLETE!")
+        print(" PREPROCESSING COMPLETE!")
         print("="*60)
-        print(f"\n📁 Processed data saved to: {OUTPUT_PATH}/")
+        print(f"\n Processed data saved to: {OUTPUT_PATH}/")
         print("\nFolder structure created:")
         for class_name in preprocessor.class_names:
             print(f"   ✓ {class_name}/")
-        print("\n🚀 You can now run train.py to train the model!")
+        print("\n You can now run train.py to train the model!")
         print("="*60)
     else:
         print("\n❌ Failed to save processed data!")
@@ -335,8 +335,8 @@ if __name__ == "__main__":
     try:
         main()
     except KeyboardInterrupt:
-        print("\n\n⚠️  Process interrupted by user!")
+        print("\n\n  Process interrupted by user!")
     except Exception as e:
-        print(f"\n❌ Unexpected error: {e}")
+        print(f"\n Unexpected error: {e}")
         import traceback
         traceback.print_exc()
