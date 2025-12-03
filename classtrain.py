@@ -33,10 +33,10 @@ class SkinDiseaseTrainer:
         val_dir = os.path.join(self.data_path, 'val')
         
         if os.path.exists(train_dir) and os.path.exists(val_dir):
-            print("✅ Using existing train/val directories")
+            print(" Using existing train/val directories")
             return train_dir, val_dir
         
-        print("📂 Creating train/val split (80/20)...")
+        print("Creating train/val split (80/20)...")
         
         all_items = os.listdir(self.data_path)
         class_folders = [
@@ -48,7 +48,7 @@ class SkinDiseaseTrainer:
         if len(class_folders) == 0:
             raise FileNotFoundError(f"No class folders found in {self.data_path}")
         
-        print(f"✅ Found {len(class_folders)} class folders")
+        print(f" Found {len(class_folders)} class folders")
         
         os.makedirs(train_dir, exist_ok=True)
         os.makedirs(val_dir, exist_ok=True)
@@ -62,7 +62,7 @@ class SkinDiseaseTrainer:
             ]
             
             if len(image_files) == 0:
-                print(f"⚠️  No images in {class_name}, skipping...")
+                print(f"  No images in {class_name}, skipping...")
                 continue
             
             split_idx = int(len(image_files) * 0.8)
@@ -93,7 +93,7 @@ class SkinDiseaseTrainer:
     
     def load_data_generators(self):
         """Data generators yükle"""
-        print("\n📁 Loading data from directories...")
+        print("\n Loading data from directories...")
         
         train_dir, val_dir = self.prepare_train_val_split()
         
@@ -102,11 +102,11 @@ class SkinDiseaseTrainer:
             if os.path.isdir(os.path.join(train_dir, d))
         ])
         
-        print(f"\n✅ Found {len(self.class_names)} classes:")
+        print(f"\nFound {len(self.class_names)} classes:")
         for i, class_name in enumerate(self.class_names, 1):
             print(f"   {i}. {class_name}")
         
-        # ✅ MobileNetV2 preprocessing
+        #  MobileNetV2 preprocessing
         train_datagen = keras.preprocessing.image.ImageDataGenerator(
             preprocessing_function=keras.applications.mobilenet_v2.preprocess_input,
             rotation_range=25,
@@ -150,8 +150,8 @@ class SkinDiseaseTrainer:
         return train_generator, val_generator
     
     def build_model(self, num_classes):
-        """✅ MobileNetV2 ile güçlü model"""
-        print("\n🏗️  Building MobileNetV2 model...")
+        """ MobileNetV2 ile güçlü model"""
+        print("\n  Building MobileNetV2 model...")
         
         try:
             base_model = keras.applications.MobileNetV2(
@@ -161,14 +161,14 @@ class SkinDiseaseTrainer:
             )
             print("   ✓ Loaded with ImageNet weights")
         except Exception as e:
-            print(f"   ⚠️  Could not load ImageNet weights: {e}")
+            print(f"    Could not load ImageNet weights: {e}")
             base_model = keras.applications.MobileNetV2(
                 input_shape=(IMG_SIZE, IMG_SIZE, 3),
                 include_top=False,
                 weights=None
             )
         
-        # ✅ İlk 100 layer freeze
+        #  İlk 100 layer freeze
         base_model.trainable = True
         for layer in base_model.layers[:-30]:
             layer.trainable = False
@@ -178,7 +178,7 @@ class SkinDiseaseTrainer:
         x = base_model(inputs, training=True)
         x = layers.GlobalAveragePooling2D()(x)
         
-        # ✅ Daha basit ama etkili head
+        #  Daha basit ama etkili head
         x = layers.Dense(512, activation='relu')(x)
         x = layers.BatchNormalization()(x)
         x = layers.Dropout(0.3)(x)
@@ -216,10 +216,10 @@ class SkinDiseaseTrainer:
         print(f"   ✓ Total parameters: {self.model.count_params():,}")
         
         print("\n" + "="*70)
-        print("🚀 TRAINING STARTED")
+        print(" TRAINING STARTED")
         print("="*70)
         
-        # ✅ Daha agresif learning rate
+        #  Daha agresif learning rate
         self.model.compile(
             optimizer=keras.optimizers.Adam(learning_rate=LEARNING_RATE),
             loss='categorical_crossentropy',
@@ -237,7 +237,7 @@ class SkinDiseaseTrainer:
             ),
             EarlyStopping(
                 monitor='val_accuracy',
-                patience=15,  # ✅ Daha uzun patience
+                patience=15,  #  Daha uzun patience
                 restore_best_weights=True,
                 verbose=1,
                 mode='max'
@@ -249,7 +249,7 @@ class SkinDiseaseTrainer:
                 min_lr=1e-7,
                 verbose=1
             ),
-            LearningRateScheduler(self.lr_schedule)  # ✅ YENİ
+            LearningRateScheduler(self.lr_schedule)  #  YENİ
         ]
         
         steps_per_epoch = max(1, train_generator.samples // BATCH_SIZE)
@@ -268,14 +268,14 @@ class SkinDiseaseTrainer:
         # Model kaydet
         final_path = os.path.join(self.model_path, 'skin_disease_model.keras')
         self.model.save(final_path)
-        print(f"\n✅ Final model saved to: {final_path}")
+        print(f"\n Final model saved to: {final_path}")
         
         # Class names kaydet
         class_names_path = os.path.join(self.model_path, 'class_names.txt')
         with open(class_names_path, 'w', encoding='utf-8') as f:
             for name in self.class_names:
                 f.write(f"{name}\n")
-        print(f"✅ Class names saved to: {class_names_path}")
+        print(f" Class names saved to: {class_names_path}")
         
         self.history = history.history
         
@@ -325,7 +325,7 @@ def main():
     print(f"   Model: MobileNetV2 (daha hızlı)")
     print(f"   Batch size: {BATCH_SIZE}")
     print(f"   Initial LR: {LEARNING_RATE}")
-    print(f"   With LR Schedule: ✅")
+    print(f"   With LR Schedule: ")
     print(f"   Data path: {DATA_PATH}")
     
     trainer = SkinDiseaseTrainer(DATA_PATH, MODEL_PATH)
@@ -336,18 +336,18 @@ def main():
         trainer.plot_training_history()
         
         print("\n" + "="*70)
-        print("✅ TRAINING COMPLETE!")
+        print(" TRAINING COMPLETE!")
         print("="*70)
-        print(f"📁 Models saved in: {MODEL_PATH}/")
+        print(f" Models saved in: {MODEL_PATH}/")
         print(f"   ✓ best_model.keras")
         print(f"   ✓ skin_disease_model.keras")
         print(f"   ✓ class_names.txt")
         print(f"   ✓ training_history.png")
-        print("\n🚀 Ready for testing with test.py!")
+        print("\n Ready for testing with test.py!")
         print("="*70)
         
     except Exception as e:
-        print(f"\n❌ Error: {str(e)}")
+        print(f"\n Error: {str(e)}")
         import traceback
         traceback.print_exc()
 
