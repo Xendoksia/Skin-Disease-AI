@@ -64,7 +64,7 @@ class SkinDiseaseClassifierUI:
         
         middle_frame = tk.LabelFrame(
             main_frame,
-            text="🔥 Grad-CAM Heat Map",
+            text=" Grad-CAM Heat Map",
             font=('Arial', 12, 'bold'),
             bg='white',
             relief=tk.RAISED,
@@ -106,7 +106,7 @@ class SkinDiseaseClassifierUI:
         
         self.load_btn = tk.Button(
             button_frame,
-            text="📁 Load Image",
+            text=" Load Image",
             command=self.load_image,
             font=('Arial', 11, 'bold'),
             bg='#3498db',
@@ -119,7 +119,7 @@ class SkinDiseaseClassifierUI:
         
         self.classify_btn = tk.Button(
             button_frame,
-            text="🔍 Classify",
+            text=" Classify",
             command=self.classify_image,
             font=('Arial', 11, 'bold'),
             bg='#27ae60',
@@ -133,7 +133,7 @@ class SkinDiseaseClassifierUI:
         
         self.camera_btn = tk.Button(
             button_frame,
-            text="📷 Open Camera",
+            text=" Open Camera",
             command=self.open_camera,
             font=('Arial', 11, 'bold'),
             bg='#e74c3c',
@@ -146,7 +146,7 @@ class SkinDiseaseClassifierUI:
         
         results_frame = tk.LabelFrame(
             right_frame,
-            text="📊 Classification Results",
+            text=" Classification Results",
             font=('Arial', 12, 'bold'),
             bg='white',
             relief=tk.RAISED,
@@ -159,7 +159,7 @@ class SkinDiseaseClassifierUI:
         
         tk.Label(
             pred_frame,
-            text="🎯 Predicted Disease:",
+            text=" Predicted Disease:",
             font=('Arial', 11, 'bold'),
             bg='white'
         ).pack(anchor=tk.W)
@@ -180,7 +180,7 @@ class SkinDiseaseClassifierUI:
         
         tk.Label(
             conf_frame,
-            text="📈 Confidence:",
+            text=" Confidence:",
             font=('Arial', 11, 'bold'),
             bg='white'
         ).pack(anchor=tk.W)
@@ -199,7 +199,7 @@ class SkinDiseaseClassifierUI:
         
         tk.Label(
             top_frame,
-            text="🏆 Top 5 Predictions:",
+            text=" Top 5 Predictions:",
             font=('Arial', 11, 'bold'),
             bg='white'
         ).pack(anchor=tk.W)
@@ -223,7 +223,7 @@ class SkinDiseaseClassifierUI:
         
         self.status_label = tk.Label(
             self.root,
-            text="🟢 Ready",
+            text=" Ready",
             font=('Arial', 10, 'bold'),
             bg='#34495e',
             fg='white',
@@ -234,7 +234,7 @@ class SkinDiseaseClassifierUI:
     def load_model(self):
         """Load the trained model and class names"""
         try:
-            self.status_label.config(text="🔄 Loading model...")
+            self.status_label.config(text=" Loading model...")
             self.root.update()
             
             model_path = 'model/best_model.keras'
@@ -244,29 +244,29 @@ class SkinDiseaseClassifierUI:
                 model_path = 'model/skin_disease_model.keras'
             
             if not os.path.exists(model_path):
-                self.status_label.config(text="❌ Error: Model not found!")
+                self.status_label.config(text=" Error: Model not found!")
                 messagebox.showerror("Error", f"Model not found!\n\nPlease train the model first using train.py")
                 return
             
             if not os.path.exists(class_names_path):
-                self.status_label.config(text="❌ Error: Class names file not found!")
+                self.status_label.config(text=" Error: Class names file not found!")
                 messagebox.showerror("Error", f"Class names file not found!")
                 return
             
             print(f"Loading model from: {model_path}")
             self.model = keras.models.load_model(model_path)
-            print("✅ Model loaded successfully!")
+            print(" Model loaded successfully!")
             
             print(f"Loading class names from: {class_names_path}")
             with open(class_names_path, 'r', encoding='utf-8') as f:
                 self.class_names = [line.strip() for line in f.readlines()]
-            print(f"✅ Loaded {len(self.class_names)} classes")
+            print(f" Loaded {len(self.class_names)} classes")
             
-            self.status_label.config(text=f"🟢 Ready - Model loaded! ({len(self.class_names)} classes)")
+            self.status_label.config(text=f" Ready - Model loaded! ({len(self.class_names)} classes)")
             messagebox.showinfo("Success", f"Model loaded successfully!\n{len(self.class_names)} disease classes found")
             
         except Exception as e:
-            self.status_label.config(text=f"❌ Error loading model: {str(e)}")
+            self.status_label.config(text=f" Error loading model: {str(e)}")
             print(f"Error: {e}")
             import traceback
             traceback.print_exc()
@@ -275,12 +275,12 @@ class SkinDiseaseClassifierUI:
     def load_segmentation_model(self):
         """Load the segmentation model"""
         try:
-            print("\n🔄 Loading segmentation model...")
+            print("\n Loading segmentation model...")
             
             seg_model_path = 'segmentation_outputs/checkpoints/best_model.pth'
             
             if not os.path.exists(seg_model_path):
-                print("⚠️ Segmentation model not found, segmentation will be disabled")
+                print(" Segmentation model not found, segmentation will be disabled")
                 print(f"   Looking for: {os.path.abspath(seg_model_path)}")
                 self.seg_model = None
                 return
@@ -332,7 +332,7 @@ class SkinDiseaseClassifierUI:
             self.seg_model.to(self.device)
             self.seg_model.eval()
             
-            print(f"✅ Segmentation model loaded! (Epoch {checkpoint['epoch']+1})")
+            print(f" Segmentation model loaded! (Epoch {checkpoint['epoch']+1})")
             best_iou = checkpoint.get('best_iou', checkpoint.get('best_val_iou', 0))
             print(f"   Best IoU: {best_iou:.4f}")
             
@@ -340,15 +340,14 @@ class SkinDiseaseClassifierUI:
                 f"Segmentation model loaded!\n\nArchitecture: {architecture}\nBackbone: {backbone}\nBest IoU: {best_iou:.4f}")
             
         except Exception as e:
-            print(f"⚠️ Could not load segmentation model: {e}")
+            print(f" Could not load segmentation model: {e}")
             import traceback
             traceback.print_exc()
             self.seg_model = None
     
     def compute_gradcam(self, img):
-        """🔥 Grad-CAM ile hastalık bölgesini tespit et"""
         try:
-            print("🔥 Computing Grad-CAM...")
+            print(" Computing Grad-CAM...")
             
             # Orijinal resmi preprocess et
             img_array = self.preprocess_image(img)
@@ -362,30 +361,28 @@ class SkinDiseaseClassifierUI:
                     break
             
             if last_conv_layer is None:
-                print("⚠️ No convolutional layer found, using alternative method")
+                print(" No convolutional layer found, using alternative method")
                 return self.compute_attention_map(img)
             
             print(f"   Using layer: {last_conv_layer.name}")
             
-            # Gradient modeli oluştur
+          
             grad_model = tf.keras.models.Model(
                 inputs=[self.model.inputs],
                 outputs=[last_conv_layer.output, self.model.output]
             )
             
-            # Forward pass ve gradient hesapla
+        
             with tf.GradientTape() as tape:
                 conv_outputs, predictions = grad_model(img_array)
                 predicted_class = tf.argmax(predictions[0])
                 class_channel = predictions[:, predicted_class]
             
-            # Gradient'ları al
+        
             grads = tape.gradient(class_channel, conv_outputs)
             
-            # Global average pooling
             pooled_grads = tf.reduce_mean(grads, axis=(0, 1, 2))
             
-            # Conv output ile ağırlıkları çarp
             conv_outputs = conv_outputs[0]
             pooled_grads = pooled_grads.numpy()
             conv_outputs = conv_outputs.numpy()
@@ -393,26 +390,24 @@ class SkinDiseaseClassifierUI:
             for i in range(len(pooled_grads)):
                 conv_outputs[:, :, i] *= pooled_grads[i]
             
-            # Tüm kanalları ortala
             heatmap = np.mean(conv_outputs, axis=-1)
-            
-            # Normalize et (0-1 arası)
+                       
             heatmap = np.maximum(heatmap, 0)  # ReLU
             if heatmap.max() > 0:
                 heatmap = heatmap / heatmap.max()
             
-            print(f"   ✅ Grad-CAM computed! Predicted class: {int(predicted_class)}")
+            print(f"    Grad-CAM computed! Predicted class: {int(predicted_class)}")
             
             return heatmap, int(predicted_class)
             
         except Exception as e:
-            print(f"❌ Error computing Grad-CAM: {e}")
+            print(f" Error computing Grad-CAM: {e}")
             import traceback
             traceback.print_exc()
             return self.compute_attention_map(img)
     
     def compute_attention_map(self, img):
-        """🎯 Basit attention map (Grad-CAM başarısız olursa)"""
+        """ Basit attention map (Grad-CAM başarısız olursa)"""
         try:
             print("   Using simple attention map...")
             
@@ -420,25 +415,20 @@ class SkinDiseaseClassifierUI:
             img_array = self.preprocess_image(img)
             img_array = np.expand_dims(img_array, axis=0)
             
-            # Tahmin yap
             predictions = self.model.predict(img_array, verbose=0)
             predicted_class = np.argmax(predictions[0])
             
-            # Basit saliency map
             h, w = 224, 224
             center_y, center_x = h // 2, w // 2
             y, x = np.ogrid[:h, :w]
             
-            # Gaussian-like attention (merkezden uzaklaştıkça azalan)
             distance = np.sqrt((x - center_x)**2 + (y - center_y)**2)
             heatmap = np.exp(-distance / (h * 0.3))
             
-            # Kenarları vurgula (cilt hastalıkları genelde kenar/yüzeyde)
             edges = cv2.Canny(cv2.resize(img, (224, 224)), 50, 150)
             edge_attention = cv2.GaussianBlur(edges.astype(np.float32), (21, 21), 0)
             edge_attention = edge_attention / (edge_attention.max() + 1e-8)
             
-            # Birleştir
             heatmap = heatmap * 0.3 + edge_attention * 0.7
             heatmap = heatmap / (heatmap.max() + 1e-8)
             
@@ -446,35 +436,29 @@ class SkinDiseaseClassifierUI:
             
         except Exception as e:
             print(f"Error in attention map: {e}")
-            # En basit: uniform map
             heatmap = np.ones((224, 224)) * 0.5
             predictions = self.model.predict(np.expand_dims(self.preprocess_image(img), axis=0), verbose=0)
             predicted_class = np.argmax(predictions[0])
             return heatmap, int(predicted_class)
     
     def create_explanation_image(self, img, heatmap):
-        """✅ Grad-CAM heatmap görselleştirmesi"""
         try:
             h, w = img.shape[:2]
             
-            # Heatmap'i orijinal boyuta getir
             heatmap_resized = cv2.resize(heatmap, (w, h))
             
-            # Heatmap'i 0-255 arası yap
             heatmap_uint8 = np.uint8(255 * heatmap_resized)
             
-            # Jet colormap uygula (mavi=düşük, kırmızı=yüksek)
             heatmap_colored = cv2.applyColorMap(heatmap_uint8, cv2.COLORMAP_JET)
-            
-            # Orijinal resimle blend et
+     
             superimposed = cv2.addWeighted(img, 0.6, heatmap_colored, 0.4, 0)
             
-            print(f"   ✅ Grad-CAM visualization created")
+            print(f"    Grad-CAM visualization created")
             
             return superimposed
             
         except Exception as e:
-            print(f"❌ Error creating Grad-CAM visualization: {e}")
+            print(f" Error creating Grad-CAM visualization: {e}")
             import traceback
             traceback.print_exc()
             return img
@@ -493,7 +477,7 @@ class SkinDiseaseClassifierUI:
             self.current_image_path = file_path
             self.display_image(file_path)
             self.classify_btn.config(state=tk.NORMAL)
-            self.status_label.config(text=f"🟡 Loaded: {os.path.basename(file_path)}")
+            self.status_label.config(text=f" Loaded: {os.path.basename(file_path)}")
     
     def display_image(self, image_path):
         """Display image in the UI"""
@@ -554,7 +538,7 @@ class SkinDiseaseClassifierUI:
             return
         
         try:
-            self.status_label.config(text="🔴 Classifying...")
+            self.status_label.config(text=" Classifying...")
             self.root.update()
             
             # Predict
@@ -568,18 +552,18 @@ class SkinDiseaseClassifierUI:
             top_confidence = predictions[top_idx] * 100
             
             print(f"\n{'='*60}")
-            print(f"🎯 Prediction: {top_class}")
-            print(f"📈 Confidence: {top_confidence:.2f}%")
+            print(f" Prediction: {top_class}")
+            print(f"📈Confidence: {top_confidence:.2f}%")
             print(f"{'='*60}\n")
             
             # ✅ Grad-CAM explanation
-            self.status_label.config(text="🔥 Computing Grad-CAM (hastalık bölgesi tespit ediliyor)...")
+            self.status_label.config(text=" Computing Grad-CAM (hastalık bölgesi tespit ediliyor)...")
             self.root.update()
             
             heatmap, predicted_class_idx = self.compute_gradcam(self.current_image)
             
             if heatmap is not None:
-                print("✅ Creating Grad-CAM visualization...")
+                print(" Creating Grad-CAM visualization...")
                 
                 # Display img'i resize et
                 display_img = self.current_image.copy()
@@ -598,7 +582,7 @@ class SkinDiseaseClassifierUI:
                     
                     self.explanation_label.config(image=img_tk, text="")
                     self.explanation_label.image = img_tk
-                    print("✅ Grad-CAM visualization displayed!")
+                    print(" Grad-CAM visualization displayed!")
             
             # 🎯 Segmentation
             if self.seg_model is not None:
@@ -608,7 +592,7 @@ class SkinDiseaseClassifierUI:
                 seg_mask = self.predict_segmentation(self.current_image)
                 
                 if seg_mask is not None:
-                    print("✅ Creating segmentation visualization...")
+                    print(" Creating segmentation visualization...")
                     
                     # Display img'i resize et
                     display_img = self.current_image.copy()
@@ -628,11 +612,11 @@ class SkinDiseaseClassifierUI:
                         
                         self.segmentation_label.config(image=img_tk, text="")
                         self.segmentation_label.image = img_tk
-                        print("✅ Segmentation visualization displayed!")
+                        print(" Segmentation visualization displayed!")
                 else:
-                    print("❌ Segmentation mask is None")
+                    print(" Segmentation mask is None")
             else:
-                print("⚠️ Segmentation model not loaded, skipping segmentation")
+                print(" Segmentation model not loaded, skipping segmentation")
                 self.segmentation_label.config(text="Segmentation model\nnot available\n\nTrain model first using\nsegtrain.py")
             
             # Update results
@@ -656,10 +640,10 @@ class SkinDiseaseClassifierUI:
             
             self.predictions_text.config(state=tk.DISABLED)
             
-            self.status_label.config(text=f"🟢 Classification complete! Confidence: {top_confidence:.2f}%")
+            self.status_label.config(text=f" Classification complete! Confidence: {top_confidence:.2f}%")
             
         except Exception as e:
-            self.status_label.config(text=f"❌ Error: {str(e)}")
+            self.status_label.config(text=f" Error: {str(e)}")
             print(f"Error: {e}")
             import traceback
             traceback.print_exc()
@@ -668,7 +652,7 @@ class SkinDiseaseClassifierUI:
     def predict_segmentation(self, img):
         """Predict lesion segmentation using U-Net"""
         try:
-            print("🎯 Running U-Net segmentation...")
+            print(" Running U-Net segmentation...")
             
             # Preprocess for segmentation
             img_resized = cv2.resize(img, (320, 320))
@@ -692,12 +676,12 @@ class SkinDiseaseClassifierUI:
             h, w = img.shape[:2]
             mask = cv2.resize(mask, (w, h), interpolation=cv2.INTER_NEAREST)
             
-            print(f"   ✅ Segmentation complete! Mask size: {mask.shape}")
+            print(f"    Segmentation complete! Mask size: {mask.shape}")
             
             return mask
             
         except Exception as e:
-            print(f"❌ Error in segmentation: {e}")
+            print(f" Error in segmentation: {e}")
             import traceback
             traceback.print_exc()
             return None
@@ -724,7 +708,7 @@ class SkinDiseaseClassifierUI:
             cv2.putText(overlay, text, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 
                        0.7, (0, 255, 0), 2)
             
-            print(f"   ✅ Segmentation overlay created")
+            print(f"    Segmentation overlay created")
             
             return overlay
             
@@ -785,7 +769,7 @@ class SkinDiseaseClassifierUI:
                     self.current_image = camera_window.current_frame.copy()
                     self.display_image_from_array(self.current_image)
                     self.classify_btn.config(state=tk.NORMAL)
-                    self.status_label.config(text="🟡 Image captured from camera")
+                    self.status_label.config(text=" Image captured from camera")
                     camera_window.destroy()
                     cap.release()
             elif event.keysym == 'Escape':
